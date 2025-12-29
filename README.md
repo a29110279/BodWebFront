@@ -1,5 +1,6 @@
-# Vue 3 + Vite
+# BodWebFront 🚀✨
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Hi~ 歡迎來到 **BodWebFront**！
+這裡是 前端 文件，若有任何問題歡迎聯絡我們～🙌
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+更多功能開發中，敬請期待！🚧🌟
