@@ -1,79 +1,199 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+html {
+    font-size: 14px;
+    scroll-behavior: smooth;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+        scroll-behavior: smooth;
+    }
 }
-a:hover {
-  color: #535bf2;
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
 }
 
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+    padding-top: 0px;
+    margin-bottom: 60px;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+@media (min-width:992px) {
+    .my_name {
+        font-size:48px !important;
+    }
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+.hover-box h4 {
+    display: block;
+    background-image: linear-gradient(to right, #404040 100%, transparent 0%);
+    background-size: 0% 100%;
+    background-repeat: no-repeat;
+    transition: background-size 0.5s ease;
+    color: black;
+    padding: 2px 4px;
 }
 
-.card {
-  padding: 2em;
+.hover-box:hover h4{
+    background-size: 100% 100%;
+    color: whitesmoke; /* 可選，加對比 */
 }
 
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/* 預設大螢幕的樣式 */
+.custom-margin {
+  margin-left: 180px;
 }
+    .custom-margin #border1 {
+        height: 60px;
+        margin-left: 50px;
+    }
+    .custom-margin #work_date {
+        margin-left: 20px;
+        margin-bottom: 80px;
+    }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+@media (max-width: 1024px) {
+  /* 小於 1024px 時取消 margin */
+  .custom-margin {
+    margin-left: 0px !important;
   }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+
+  /* 調整 h4 和 h6 字體大小 */
+    .custom-margin h4 {
+        font-size: 1.25rem !important; /* 比 fs-3 小 */
+    }
+
+    .custom-margin h6 {
+        font-size: 0.9rem !important;
+    }
+    .custom-margin h5 {
+        font-size: 1rem !important;
+    }
+}
+@media(max-width: 425px){
+    .custom-margin .content-box,.content-box-2{
+        display:none !important;
+    }
+        .custom-margin .content-box .d-block, .content-box-2 .d-block {
+            display: block !important;
+        }
+    .custom-margin #border1 {
+        height: 60px;
+        margin-left: 105px;
+    }
+    .custom-margin #work_date {
+        margin-left: 0px;
+        margin-bottom: 80px;
+    }
+}
+
+
+.custom-margin-2 {
+    margin-top: 70px;
+}
+
+@media (max-width: 768px) {
+    /* 小於 1024px 時取消 margin */
+    .custom-margin-2 {
+        margin-top: 50px !important;
+    }
+}
+
+#about, #work_experience, #contact, #my_profile {
+    scroll-margin-top: 65px; /* 視你的 navbar 高度決定 */
+}
+
+.custom-margin-3 {
+    margin-left: 180px;
+}
+
+    .custom-margin-3 #work_tool_detail {
+        margin-left: 122px;
+    }
+
+@media (max-width: 1024px) {
+    /* 小於 1024px 時取消 margin */
+    .custom-margin-3 {
+        margin-left: 0px !important;
+    }
+
+        /* 調整 h4 和 h6 字體大小 */
+        .custom-margin-3 h4 {
+            font-size: 1rem !important;
+        }
+        .custom-margin-3 #work_tool {
+            font-size: 0.9rem !important; 
+        }
+        .custom-margin-3 #work_tool_detail {
+            margin-left: 73px !important;
+        }
+}
+
+@media (max-width: 425px) {
+    .custom-margin-3 #Email{
+        font-size: 0.9rem !important;
+    }
+
+}
+
+/* modal 背景 */
+.mobile-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.8);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* modal 白色內容區塊 */
+.mobile-modal-content {
+    background-color: whitesmoke;
+    padding: 20px;
+    max-height: 90%;
+    overflow-y: auto;
+    border-radius: 10px;
+    max-width: 90%;
+    position: relative;
+}
+
+/* 關閉按鈕 */
+.close-modal {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 2rem;
+    cursor: pointer;
+}
+
+/* 僅在小於 425px 時顯示 modal */
+@media (min-width: 426px) {
+    .mobile-modal {
+        display: none !important;
+    }
+}
+
+#mobileModalContent {
+
+h4{
+    font-size: 1.25rem !important; /* 比 fs-3 小 */
+}
+
+h6 {
+    font-size: 0.9rem !important;
+}
+
+h5 {
+    font-size: 1rem !important;
+}
 }
