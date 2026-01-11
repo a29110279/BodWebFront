@@ -1,0 +1,49 @@
+.container {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.nav {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.main {
+  padding-top: 8px;
+}
+
+footer a:hover {
+  color: #00d4ff !important;
+  text-decoration: underline;
+}
+
+nav .dropdown-item {
+  background-image: linear-gradient(to right, #555555 100%, transparent 100%);
+  background-size: 0% 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.5s ease;
+  color: black;
+}
+
+nav .dropdown-item:hover {
+  background-size: 100% 100%;
+  color: whitesmoke;
+}
+
+.hover-box .nav-link,
+.hover-box .btn {
+  background-image: linear-gradient(to right, #555555 100%, transparent 0%);
+  background-size: 0% 100%;
+  border-radius: 12px;
+  background-repeat: no-repeat;
+  transition: background-size 0.5s ease;
+  color: black;
+}
+.hover-box:hover .nav-link,
+.hover-box .btn:hover {
+  background-size: 100% 100%;
+  color: whitesmoke;
+}
