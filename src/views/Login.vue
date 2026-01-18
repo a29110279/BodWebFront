@@ -16,6 +16,7 @@ async function login() {
       password: password.value,
     });
     localStorage.setItem("token", res.data.token);
+    localStorage.setItem("userAccount", account.value);  // 保存账号供后续使用
     location.reload();
     router.push("/profile");
   } catch (e) {

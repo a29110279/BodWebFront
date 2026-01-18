@@ -6,6 +6,12 @@ const profile = ref(null);
 const msg = ref("");
 const loading = ref(false);
 const expandedSections = ref({});
+const isEditing = ref(false);
+const editForm = ref({
+  userName: "",
+  userEmail: "",
+  userPhone: ""
+});
 
 async function loadProfile() {
   msg.value = "";
@@ -33,6 +39,65 @@ function formatValue(value) {
     return JSON.stringify(value, null, 2);
   }
   return String(value);
+}
+
+function startEditing() {
+  isEditing.value = true;
+  editForm.value = {
+    userName: profile.value.userName,
+    userEmail: profile.value.userEmail,
+    userPhone: profile.value.userPhone
+  };
+}
+
+async function saveProfile() {
+  try {
+    const res = await api.put("/api/self/profile", {
+      userName: editForm.value.userName,
+      email: editForm.value.userEmail,
+      phoneNumber: editForm.value.userPhone
+    });
+
+    // 更新 localStorage 的新 Token
+    if (res.data.token) {
+      localStorage.setItem('token', res.data.token);
+    }
+
+    // 更新前端 profile 狀態
+    profile.value = {
+      ...profile.value,
+      userName: editForm.value.userName,
+      userEmail: editForm.value.userEmail,
+      userPhone: editForm.value.userPhone
+    };
+
+    isEditing.value = false;
+    msg.value = "個人資料已成功更新";
+
+    // 可選：3 秒後重新載入資料（不用 reload 頁面）
+    setTimeout(async () => {
+      await loadProfile();  // 重新 GET 最新資料
+      msg.value = "";
+    }, 3000);
+  } catch (e) {
+    msg.value = "更新失敗：" + (e.response?.data?.message || e.message);
+  }
+}
+
+async function reloadProfileData() {
+  try {
+    const res = await api.get("/api/self/profile");
+    profile.value = res.data;
+    // 強制重新整理頁面
+    location.reload();
+  } catch (e) {
+    msg.value = "重新載入個人資料失敗。";
+    console.error(e);
+  }
+}
+
+function cancelEditing() {
+  isEditing.value = false;
 }
 
 onMounted(loadProfile);
@@ -68,16 +133,35 @@ onMounted(loadProfile);
           <div class="user-card">
             <div class="user-avatar">
               <img 
-                :src="profile.avatar || 'https://via.placeholder.com/150'" 
-                :alt="profile.username || 'User'"
+                :src="profile.avatar || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22150%22%3E%3Crect fill=%22%23e0e0e0%22 width=%22150%22 height=%22150%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-size=%2248%22 fill=%22%23999%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22%3E👤%3C/text%3E%3C/svg%3E'" 
+                :alt="profile.userName || 'User'"
               >
             </div>
             <div class="user-info">
-              <h2>{{ profile.username || "未知用戶" }}</h2>
-              <p class="email">{{ profile.email || "無電子郵件" }}</p>
+              <h2>{{ profile.userName || "未知用戶" }}</h2>
+              <p class="email">{{ profile.userEmail || "無電子郵件" }}</p>
             </div>
             <div class="user-actions">
-              <button class="btn-primary">編輯</button>
+              <button 
+                v-if="!isEditing" 
+                @click="startEditing" 
+                class="btn-primary">
+                編輯
+              </button>
+              <template v-else>
+                <button 
+                  @click="saveProfile" 
+                  class="btn-save"
+                  :disabled="loading">
+                  {{ loading ? "儲存中..." : "儲存" }}
+                </button>
+                <button 
+                  @click="cancelEditing" 
+                  class="btn-cancel"
+                  :disabled="loading">
+                  取消
+                </button>
+              </template>
               <button class="btn-secondary">設定</button>
             </div>
           </div>
@@ -88,86 +172,57 @@ onMounted(loadProfile);
           <!-- 基本信息卡片 -->
           <section class="card">
             <div class="card-header" @click="toggleSection('basic')">
-              <h3>📋 基本信息</h3>
+              <h3>📋 個人資料</h3>
               <span class="toggle-icon" :class="{ expanded: expandedSections['basic'] }">▼</span>
             </div>
             <div v-if="expandedSections['basic']" class="card-body">
               <div class="info-grid">
                 <div class="info-item">
                   <span class="label">用戶名</span>
-                  <span class="value">{{ profile.username }}</span>
+                  <span v-if="!isEditing" class="value">{{ profile.userName }}</span>
+                  <input 
+                    v-else 
+                    v-model="editForm.userName" 
+                    type="text" 
+                    class="edit-input"
+                    placeholder="用戶名">
                 </div>
                 <div class="info-item">
                   <span class="label">電子郵件</span>
-                  <span class="value">{{ profile.email }}</span>
+                  <span v-if="!isEditing" class="value">{{ profile.userEmail }}</span>
+                  <input 
+                    v-else 
+                    v-model="editForm.userEmail" 
+                    type="email" 
+                    class="edit-input"
+                    placeholder="電子郵件">
                 </div>
                 <div class="info-item">
-                  <span class="label">位置</span>
-                  <span class="value">{{ profile.location || "未設定" }}</span>
+                  <span class="label">手機號碼</span>
+                  <span v-if="!isEditing" class="value">{{ profile.userPhone || "未設定" }}</span>
+                  <input 
+                    v-else 
+                    v-model="editForm.userPhone" 
+                    type="text" 
+                    class="edit-input"
+                    placeholder="手機號碼">
                 </div>
                 <div class="info-item">
-                  <span class="label">網站</span>
-                  <span class="value">
-                    <a v-if="profile.website" :href="profile.website" target="_blank">
-                      {{ profile.website }}
-                    </a>
-                    <span v-else>未設定</span>
-                  </span>
+                  <span class="label">生日</span>
+                  <span class="value">{{ profile.userBirthday || "未設定" }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">身份角色</span>
+                  <span class="value">{{ profile.userRole || "未設定" }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">用戶ID</span>
+                  <span class="value">{{ profile.userId }}</span>
                 </div>
               </div>
             </div>
           </section>
-
-          <!-- 生物介紹 -->
-          <section class="card" v-if="profile.bio">
-            <div class="card-header" @click="toggleSection('bio')">
-              <h3>📝 介紹</h3>
-              <span class="toggle-icon" :class="{ expanded: expandedSections['bio'] }">▼</span>
-            </div>
-            <div v-if="expandedSections['bio']" class="card-body">
-              <p class="bio-text">{{ profile.bio }}</p>
-            </div>
-          </section>
-
-          <!-- 統計數據 -->
-          <section class="card" v-if="profile.posts || profile.followers || profile.following">
-            <div class="card-header" @click="toggleSection('stats')">
-              <h3>📊 統計</h3>
-              <span class="toggle-icon" :class="{ expanded: expandedSections['stats'] }">▼</span>
-            </div>
-            <div v-if="expandedSections['stats']" class="card-body">
-              <div class="stats-grid">
-                <div class="stat-item">
-                  <span class="stat-label">貼文</span>
-                  <span class="stat-value">{{ profile.posts || 0 }}</span>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">追蹤者</span>
-                  <span class="stat-value">{{ profile.followers || 0 }}</span>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">追蹤中</span>
-                  <span class="stat-value">{{ profile.following || 0 }}</span>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- 興趣標籤 -->
-          <section class="card" v-if="profile.interests && profile.interests.length > 0">
-            <div class="card-header" @click="toggleSection('interests')">
-              <h3>⭐ 興趣</h3>
-              <span class="toggle-icon" :class="{ expanded: expandedSections['interests'] }">▼</span>
-            </div>
-            <div v-if="expandedSections['interests']" class="card-body">
-              <div class="tags">
-                <span v-for="interest in profile.interests" :key="interest" class="tag">
-                  {{ interest }}
-                </span>
-              </div>
-            </div>
-          </section>
-
+          
           <!-- 完整 API 數據 -->
           <section class="card">
             <div class="card-header" @click="toggleSection('raw')">
@@ -414,6 +469,67 @@ onMounted(loadProfile);
 
 .btn-secondary:hover {
   background-color: #e8e8e8;
+}
+
+/* 保存按鈕 */
+.btn-save {
+  background-color: #28a745;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s;
+  font-size: 13px;
+}
+
+.btn-save:hover:not(:disabled) {
+  background-color: #218838;
+}
+
+.btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 取消按鈕 */
+.btn-cancel {
+  background-color: #6c757d;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s;
+  font-size: 13px;
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background-color: #5a6268;
+}
+
+.btn-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 編輯輸入框 */
+.edit-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #667eea;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #222;
+  font-family: inherit;
+}
+
+.edit-input:focus {
+  outline: none;
+  border-color: #5568d3;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 /* 主內容 */
