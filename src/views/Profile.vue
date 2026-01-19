@@ -6,7 +6,9 @@ const profile = ref(null);
 const msg = ref("");
 const loading = ref(false);
 const expandedSections = ref({});
-const isEditing = ref(false);
+const isEditmode = ref(false);
+const isEditprofile = ref(false);
+const isResetpassword = ref(false);
 const editForm = ref({
   userName: "",
   userEmail: "",
@@ -41,13 +43,26 @@ function formatValue(value) {
   return String(value);
 }
 
+function editprofile() {
+  isEditmode.value = true;
+  isEditprofile.value = true;
+}
+function editpassword() {
+  isEditmode.value = true;
+  isResetpassword.value = true;
+}
+
 function startEditing() {
-  isEditing.value = true;
+  isEditprofile.value = true;
   editForm.value = {
     userName: profile.value.userName,
     userEmail: profile.value.userEmail,
     userPhone: profile.value.userPhone
   };
+}
+
+function Resetpassword() {
+  isResetpassword.value = true;
 }
 
 async function saveProfile() {
@@ -96,9 +111,15 @@ async function reloadProfileData() {
   }
 }
 
-function cancelEditing() {
-  isEditing.value = false;
+function canceleditprdfile() {
+  isEditmode.value = false;
+  isEditprofile.value = false;
 }
+function cancelEditpassword() {
+  isEditmode.value = false;
+  isResetpassword.value = false;
+}
+
 
 onMounted(loadProfile);
 </script>
@@ -142,13 +163,18 @@ onMounted(loadProfile);
               <p class="email">{{ profile.userEmail || "無電子郵件" }}</p>
             </div>
             <div class="user-actions">
-              <button 
-                v-if="!isEditing" 
-                @click="startEditing" 
+              <template v-if="!isEditmode">
+                <button 
+                @click="editprofile" 
                 class="btn-primary">
                 編輯
               </button>
-              <template v-else>
+              <button 
+                @click="editpassword"
+                class="btn-secondary">忘記密碼
+              </button>
+              </template>
+              <template v-else-if="isEditprofile">
                 <button 
                   @click="saveProfile" 
                   class="btn-save"
@@ -156,13 +182,26 @@ onMounted(loadProfile);
                   {{ loading ? "儲存中..." : "儲存" }}
                 </button>
                 <button 
-                  @click="cancelEditing" 
+                  @click="canceleditprdfile" 
                   class="btn-cancel"
                   :disabled="loading">
                   取消
                 </button>
               </template>
-              <button class="btn-secondary">設定</button>
+              <template v-else-if="isResetpassword">
+                <button 
+                  @click="saveProfile" 
+                  class="btn-save"
+                  :disabled="loading">
+                  {{ loading ? "變更中..." : "變更密碼" }}
+                </button>
+                <button 
+                  @click="cancelEditpassword" 
+                  class="btn-cancel"
+                  :disabled="loading">
+                  取消
+                </button>
+              </template>
             </div>
           </div>
         </aside>
