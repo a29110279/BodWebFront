@@ -6,9 +6,9 @@ const profile = ref(null);
 const msg = ref("");
 const loading = ref(false);
 const expandedSections = ref({});
-const isEditmode = ref(false);
-const isEditprofile = ref(false);
-const isResetpassword = ref(false);
+const isEditMode = ref(false);
+const isEditProfile = ref(false);
+const isResetPassword = ref(false);
 const editForm = ref({
   userName: "",
   userEmail: "",
@@ -22,7 +22,7 @@ async function loadProfile() {
     const res = await api.get("/api/self/profile");
     profile.value = res.data;
   } catch (e) {
-    msg.value = "載入個人資料失敗 (可能是 token 無效)。";
+    msg.value = "載入個人資料失敗 (可能是登錄逾時)。";
     console.error(e);
   } finally {
     loading.value = false;
@@ -43,26 +43,53 @@ function formatValue(value) {
   return String(value);
 }
 
-function editprofile() {
-  isEditmode.value = true;
-  isEditprofile.value = true;
-}
-function editpassword() {
-  isEditmode.value = true;
-  isResetpassword.value = true;
-}
-
-function startEditing() {
-  isEditprofile.value = true;
+function editProfile() {
+  isEditMode.value = true;
+  isEditProfile.value = true;
+  expandedSections.value['basic'] = true;
   editForm.value = {
     userName: profile.value.userName,
     userEmail: profile.value.userEmail,
     userPhone: profile.value.userPhone
   };
 }
+function editPassword() {
+  isEditMode.value = true;
+  isResetPassword.value = true;
+  expandedSections.value['ResetP'] = true;
+}
 
-function Resetpassword() {
-  isResetpassword.value = true;
+
+async function resetPassword() {
+    try {
+    const res = await api.put("/api/self/reset-password", {
+      OldPassword: editForm.value.oldPassword,
+      NewPassword: editForm.value.newPassword
+    });
+
+    // 更新 localStorage 的新 Token
+    if (res.data.token) {
+      localStorage.setItem('token', res.data.token);
+    }
+    isEditMode.value = false;
+    isResetPassword.value = false;
+    msg.value = "個人資料已成功更新";
+
+    // 可選：3 秒後重新載入資料（不用 reload 頁面）
+    setTimeout(async () => {
+      await loadProfile();  // 重新 GET 最新資料
+      msg.value = "";
+    }, 1500);
+  } catch (e) {
+  if (e.response?.status === 400 && e.response.data?.errors) {
+    const errors = e.response.data.errors;
+    // 取出第一個欄位的第一條錯誤（最常見做法）
+    const firstError = Object.values(errors)[0]?.[0];
+    msg.value = firstError || "更新失敗，請檢查輸入";  // "密碼長度不可小於8位數"
+  } else {
+    msg.value = e.response?.data || e.message || "伺服器錯誤";
+  }
+}
 }
 
 async function saveProfile() {
@@ -86,16 +113,17 @@ async function saveProfile() {
       userPhone: editForm.value.userPhone
     };
 
-    isEditing.value = false;
+    isEditMode.value = false;
+    isEditProfile.value = false;
     msg.value = "個人資料已成功更新";
 
     // 可選：3 秒後重新載入資料（不用 reload 頁面）
     setTimeout(async () => {
       await loadProfile();  // 重新 GET 最新資料
       msg.value = "";
-    }, 3000);
+    }, 1500);
   } catch (e) {
-    msg.value = "更新失敗：" + (e.response?.data?.message || e.message);
+    msg.value = "更新失敗：" + (e.response?.error || e.response?.data);
   }
 }
 
@@ -111,13 +139,13 @@ async function reloadProfileData() {
   }
 }
 
-function canceleditprdfile() {
-  isEditmode.value = false;
-  isEditprofile.value = false;
+function cancelEditProfile() {
+  isEditMode.value = false;
+  isEditProfile.value = false;
 }
-function cancelEditpassword() {
-  isEditmode.value = false;
-  isResetpassword.value = false;
+function cancelEditPassword() {
+  isEditMode.value = false;
+  isResetPassword.value = false;
 }
 
 
@@ -138,8 +166,8 @@ onMounted(loadProfile);
 
     <!-- 主容器 -->
     <div class="container">
-      <!-- 錯誤提示 -->
-      <div v-if="msg" class="alert alert-error">{{ msg }}</div>
+      <!-- 訊息提示 -->
+      <div v-if="msg" :class="['alert', msg.includes('成功') ? 'alert-success' : 'alert-error']">{{ msg }}</div>
 
       <!-- 加載狀態 -->
       <div v-if="loading && !profile" class="loading-state">
@@ -153,52 +181,35 @@ onMounted(loadProfile);
         <aside class="sidebar">
           <div class="user-card">
             <div class="user-avatar">
-              <img 
-                :src="profile.avatar || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22150%22%3E%3Crect fill=%22%23e0e0e0%22 width=%22150%22 height=%22150%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-size=%2248%22 fill=%22%23999%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22%3E👤%3C/text%3E%3C/svg%3E'" 
-                :alt="profile.userName || 'User'"
-              >
+              <img
+                :src="profile.avatar || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22150%22%3E%3Crect fill=%22%23e0e0e0%22 width=%22150%22 height=%22150%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-size=%2248%22 fill=%22%23999%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22%3E👤%3C/text%3E%3C/svg%3E'"
+                :alt="profile.userName || 'User'">
             </div>
             <div class="user-info">
               <h2>{{ profile.userName || "未知用戶" }}</h2>
               <p class="email">{{ profile.userEmail || "無電子郵件" }}</p>
             </div>
             <div class="user-actions">
-              <template v-if="!isEditmode">
-                <button 
-                @click="editprofile" 
-                class="btn-primary">
-                編輯
-              </button>
-              <button 
-                @click="editpassword"
-                class="btn-secondary">忘記密碼
-              </button>
+              <template v-if="!isEditMode">
+                <button @click="editProfile()" class="btn-primary">
+                  編輯
+                </button>
+                <button @click="editPassword" class="btn-secondary">變更密碼
+                </button>
               </template>
-              <template v-else-if="isEditprofile">
-                <button 
-                  @click="saveProfile" 
-                  class="btn-save"
-                  :disabled="loading">
+              <template v-else-if="isEditProfile">
+                <button @click="saveProfile" class="btn-save" :disabled="loading">
                   {{ loading ? "儲存中..." : "儲存" }}
                 </button>
-                <button 
-                  @click="canceleditprdfile" 
-                  class="btn-cancel"
-                  :disabled="loading">
+                <button @click="cancelEditProfile" class="btn-cancel" :disabled="loading">
                   取消
                 </button>
               </template>
-              <template v-else-if="isResetpassword">
-                <button 
-                  @click="saveProfile" 
-                  class="btn-save"
-                  :disabled="loading">
-                  {{ loading ? "變更中..." : "變更密碼" }}
+              <template v-else-if="isResetPassword">
+                <button @click="resetPassword" class="btn-save" :disabled="loading">
+                  {{ loading ? "變更中..." : "確認變更" }}
                 </button>
-                <button 
-                  @click="cancelEditpassword" 
-                  class="btn-cancel"
-                  :disabled="loading">
+                <button @click="cancelEditPassword" class="btn-cancel" :disabled="loading">
                   取消
                 </button>
               </template>
@@ -214,72 +225,85 @@ onMounted(loadProfile);
               <h3>📋 個人資料</h3>
               <span class="toggle-icon" :class="{ expanded: expandedSections['basic'] }">▼</span>
             </div>
-            <div v-if="expandedSections['basic']" class="card-body">
-              <div class="info-grid">
-                <div class="info-item">
-                  <span class="label">用戶名</span>
-                  <span v-if="!isEditing" class="value">{{ profile.userName }}</span>
-                  <input 
-                    v-else 
-                    v-model="editForm.userName" 
-                    type="text" 
-                    class="edit-input"
-                    placeholder="用戶名">
-                </div>
-                <div class="info-item">
-                  <span class="label">電子郵件</span>
-                  <span v-if="!isEditing" class="value">{{ profile.userEmail }}</span>
-                  <input 
-                    v-else 
-                    v-model="editForm.userEmail" 
-                    type="email" 
-                    class="edit-input"
-                    placeholder="電子郵件">
-                </div>
-                <div class="info-item">
-                  <span class="label">手機號碼</span>
-                  <span v-if="!isEditing" class="value">{{ profile.userPhone || "未設定" }}</span>
-                  <input 
-                    v-else 
-                    v-model="editForm.userPhone" 
-                    type="text" 
-                    class="edit-input"
-                    placeholder="手機號碼">
-                </div>
-                <div class="info-item">
-                  <span class="label">生日</span>
-                  <span class="value">{{ profile.userBirthday || "未設定" }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="label">身份角色</span>
-                  <span class="value">{{ profile.userRole || "未設定" }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="label">用戶ID</span>
-                  <span class="value">{{ profile.userId }}</span>
+            <transition name="expand">
+              <div v-if="expandedSections['basic']" class="card-body">
+                <div class="info-grid">
+                  <div class="info-item">
+                    <span class="label">用戶名</span>
+                    <span v-if="!isEditProfile" class="value">{{ profile.userName }}</span>
+                    <input v-else v-model="editForm.userName" type="text" class="edit-input" placeholder="用戶名">
+                  </div>
+                  <div class="info-item">
+                    <span class="label">電子郵件</span>
+                    <span v-if="!isEditProfile" class="value">{{ profile.userEmail }}</span>
+                    <input v-else v-model="editForm.userEmail" type="email" class="edit-input" placeholder="電子郵件">
+                  </div>
+                  <div class="info-item">
+                    <span class="label">手機號碼</span>
+                    <span v-if="!isEditProfile" class="value">{{ profile.userPhone || "未設定" }}</span>
+                    <input v-else v-model="editForm.userPhone" type="text" class="edit-input" placeholder="手機號碼">
+                  </div>
+                  <div class="info-item">
+                    <span class="label">生日</span>
+                    <span class="value">{{ profile.userBirthday || "未設定" }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="label">身份角色</span>
+                    <span class="value">{{ profile.userRole || "未設定" }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="label">用戶ID</span>
+                    <span class="value">{{ profile.userId }}</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            </transition>
           </section>
-          
+
           <!-- 完整 API 數據 -->
           <section class="card">
             <div class="card-header" @click="toggleSection('raw')">
               <h3>📦 API 完整數據</h3>
               <span class="toggle-icon" :class="{ expanded: expandedSections['raw'] }">▼</span>
             </div>
-            <div v-if="expandedSections['raw']" class="card-body">
-              <div class="data-display">
-                <div v-for="(value, key) in profile" :key="key" class="data-item">
-                  <span class="data-key">{{ key }}</span>
-                  <div class="data-value">
-                    <pre v-if="typeof value === 'object'">{{ JSON.stringify(value, null, 2) }}</pre>
-                    <span v-else>{{ value }}</span>
+            <transition name="expand">
+              <div v-if="expandedSections['raw']" class="card-body">
+                <div class="data-display">
+                  <div v-for="(value, key) in profile" :key="key" class="data-item">
+                    <span class="data-key">{{ key }}</span>
+                    <div class="data-value">
+                      <pre v-if="typeof value === 'object'">{{ JSON.stringify(value, null, 2) }}</pre>
+                      <span v-else>{{ value }}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </transition>
+
+          <!-- 更改密碼 -->
           </section>
+          <section v-if="isResetPassword" class="card">
+            <div class="card-header" @click="toggleSection('ResetP')">
+              <h3>❗ 變更密碼</h3>
+              <span class="toggle-icon" :class="{ expanded: expandedSections['ResetP'] }">▼</span>
+            </div>
+            <transition name="expand">
+              <div v-if="expandedSections['ResetP']" class="card-body">
+                <div class="Reset-Password">
+                  <div class="Reset-item">
+                    <span class="label">舊密碼</span>
+                    <input v-model="editForm.oldPassword" type="text" class="edit-input" placeholder="請輸入舊密碼">
+                  </div>
+                  <div class="Reset-item">
+                    <span class="label">新密碼</span>
+                    <input v-model="editForm.newPassword" type="text" class="edit-input" placeholder="請輸入新密碼">
+                  </div>
+                </div>
+              </div>
+            </transition>
+
+          </section>
+
         </main>
       </div>
 
@@ -373,6 +397,12 @@ onMounted(loadProfile);
   border: 1px solid #f5c6cb;
 }
 
+.alert-success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
 /* 加載狀態 */
 .loading-state {
   display: flex;
@@ -393,7 +423,9 @@ onMounted(loadProfile);
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-state p {
@@ -776,6 +808,60 @@ onMounted(loadProfile);
   font-size: 13px;
   color: #333;
   word-break: break-word;
+}
+
+/* 更改密碼區域 */
+.Reset-Password {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+@media (max-width: 768px) {
+  .Reset-Password {
+    grid-template-columns: 1fr;
+  }
+}
+
+.Reset-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.Reset-item .label {
+  font-size: 12px;
+  color: #999;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+
+/* Transition 展開動畫效果 */
+.expand-enter-active,
+.expand-leave-active {
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.expand-enter-from {
+  max-height: 0;
+  opacity: 0;
+}
+
+.expand-enter-to {
+  max-height: 2000px;
+  opacity: 1;
+}
+
+.expand-leave-from {
+  max-height: 2000px;
+  opacity: 1;
+}
+
+.expand-leave-to {
+  max-height: 0;
+  opacity: 0;
 }
 
 /* 響應式設計 */
