@@ -4,6 +4,7 @@ import Home from "../views/Home.vue";
 import Login from "../views/Login.vue";
 import Register from "../views/Register.vue";
 import Profile from "../views/Profile.vue";
+import forgot_password from "../views/forgot_password.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -12,6 +13,7 @@ const router = createRouter({
     { path: "/login", name: "login", component: Login },
     { path: "/register", name: "register", component: Register },
     { path: "/profile", name: "profile", component: Profile, meta: { requiresAuth: true } },
+    { path: "/forgot_password", name: "forgot_password", component: forgot_password},
   ],
 });
 

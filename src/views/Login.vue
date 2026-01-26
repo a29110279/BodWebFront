@@ -16,7 +16,6 @@ async function login() {
       password: password.value,
     });
     localStorage.setItem("token", res.data.token);
-    localStorage.setItem("userAccount", account.value);  // 保存账号供后续使用
     location.reload();
     router.push("/profile");
   } catch (e) {
@@ -72,6 +71,7 @@ async function login() {
         <button type="submit" class="login-btn">Sign In</button>
       </form>
             <p class="register-link">Don't have an account? <a href="/register">Sign up</a></p>
+            <p class="forget-password">Forgot your password? <a href="/forgot_password">Reset it</a></p>
       <p v-if="msg" class="error-msg">{{ msg }}</p>
     </div>
   </div>
