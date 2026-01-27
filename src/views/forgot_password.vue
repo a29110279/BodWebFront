@@ -8,20 +8,14 @@ export default {
         };
     },
     methods: {
-        async handleSubmit() {
-            this.isLoading = true;
+        async requestReset() {
             try {
-                // 呼叫 API 發送驗證碼
-                // await this.$api.sendVerificationCode(this.email);
-                
-                this.$router.push({
-                    name: 'VerifyCode',
-                    params: { email: this.email },
-                });
-            } catch (error) {
-                this.$message.error('發送失敗，請稍後重試');
-            } finally {
-                this.isLoading = false;
+                await api.post('/api/auth/forgot_password', { email: this.email });
+                alert('驗證碼已寄送，請檢查信箱');
+                // 跳到輸入驗證碼頁面
+                // this.$router.push({ name: 'VerifyCode', query: { email: this.email } });
+            } catch (err) {
+                alert(err.response?.data || '寄送失敗');
             }
         },
     },
@@ -37,16 +31,10 @@ export default {
             <form @submit.prevent="handleSubmit">
                 <div class="form-group">
                     <label for="email">電子郵件</label>
-                    <input
-                        id="email"
-                        v-model="email"
-                        type="email"
-                        placeholder="請輸入電子郵件"
-                        required
-                    />
+                    <input id="email" v-model="email" type="email" placeholder="請輸入電子郵件" required />
                 </div>
 
-                <button type="submit" class="btn-submit" :disabled="isLoading">
+                <button type="submit" class="btn-submit" :disabled="isLoading" @click="requestReset">
                     {{ isLoading ? '發送中...' : '發送驗證碼' }}
                 </button>
             </form>
